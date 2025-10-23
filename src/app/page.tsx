@@ -1,3 +1,5 @@
+"use client";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,36 +24,70 @@ import {
   Sigma,
 } from "lucide-react";
 
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogTrigger,
-  DialogTitle,
-  DialogHeader,
-} from "@/components/ui/dialog";
+import { getTasksFromDB } from "@/actions/get-tasks-from-db";
+
+import EditTask from "@/components/edit-task";
+import ClearTrash from "@/components/trash-tasks";
+import { useEffect, useState } from "react";
+import { Tasks } from "@/generated/prisma";
+import { NewTask } from "@/actions/add-task";
 
 const Home = () => {
+  const [tasksList, setTasksList] = useState<Tasks[]>([]);
+  const [task, setTask] = useState<string>("");
+
+  const handleGetTasks = async () => {
+    try {
+      const tasks = await getTasksFromDB();
+      if (!tasks) {
+        return;
+      }
+      setTasksList(tasks);
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const handleAddTask = async () => {
+    try {
+      if (!task || task.length === 0) {
+        return;
+      }
+      const myNewTask = await NewTask(task);
+
+      if (!myNewTask) {
+        return;
+      }
+
+      await handleGetTasks();
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  useEffect(() => {
+    handleGetTasks();
+  }, []);
+
   return (
     <main className="w-full h-screen flex justify-center items-center bg-gray-100 p-10">
       <Card className="w-lg">
         <CardHeader className="flex gap-2">
-          <Input placeholder="Adicionar tarefa" />
-          <Button variant="default" className="cursor-pointer">
+          <Input
+            placeholder="Adicionar tarefa"
+            onChange={(e) => setTask(e.target.value)}
+          />
+          <Button
+            variant="default"
+            className="cursor-pointer"
+            onClick={handleAddTask}
+          >
             <Plus />
             Adicionar
           </Button>
         </CardHeader>
+
+        <Button onClick={handleGetTasks}>Busacar tarefas</Button>
 
         <CardContent>
           <Separator className="mb-4" />
@@ -71,29 +107,21 @@ const Home = () => {
           </div>
 
           <div className="mt-4 border-b-1">
-            <div className=" h-14 flex justify-between items-center border-t-1">
-              <div className="w-2 h-full bg-green-300"></div>
-              <p className="flex-1 mx-2 text-sm cursor-pointer">
-                Estudar React
-              </p>
-              <div className="text-center flex gap-2 mr-2">
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <SquarePen className="cursor-pointer" size={16} />
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Editar tarefas</DialogTitle>
-                    </DialogHeader>
-                    <div className="flex">
-                      <Input placeholder="Editar tarefa" />
-                      <Button className="cursor-pointer">Editar</Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-                <Trash className="cursor-pointer" size={16} />
+            {tasksList.map((task) => (
+              <div
+                className=" h-14 flex justify-between items-center border-t-1"
+                key={task.id}
+              >
+                <div className="w-2 h-full bg-green-300"></div>
+                <p className="flex-1 mx-2 text-sm cursor-pointer">
+                  {task.task}
+                </p>
+                <div className="text-center flex gap-2 mr-2">
+                  <EditTask />
+                  <Trash className="cursor-pointer" size={16} />
+                </div>
               </div>
-            </div>
+            ))}
           </div>
 
           <div className="flex justify-between mt-4">
@@ -101,28 +129,7 @@ const Home = () => {
               <ListCheck size={18} />
               <p className="text-xs">Tarefas concluidas(3/3)</p>
             </div>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  className="text-xs h-7 cursor-pointer"
-                  variant="outline"
-                >
-                  <Trash />
-                  Limpar tarefas Concluidas
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>
-                    Tem certeza que quer excluir x itens?
-                  </AlertDialogTitle>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogAction>Sim</AlertDialogAction>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+            <ClearTrash />
           </div>
 
           <div className="h-2 w-full bg-gray-100 mt-4 rounded-md">
