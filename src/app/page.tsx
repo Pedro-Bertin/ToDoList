@@ -1,28 +1,10 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import {
-  Plus,
-  List,
-  Check,
-  MoveDownRight,
-  SquarePen,
-  Trash,
-  ListCheck,
-  Sigma,
-} from "lucide-react";
+import { Plus, Trash, ListCheck, Sigma, LoaderCircle } from "lucide-react";
 
 import { getTasksFromDB } from "@/actions/get-tasks-from-db";
 
@@ -31,10 +13,28 @@ import ClearTrash from "@/components/trash-tasks";
 import { useEffect, useState } from "react";
 import { Tasks } from "@/generated/prisma";
 import { NewTask } from "@/actions/add-task";
+import { deleteTask } from "@/actions/delete-task";
+import { toast } from "sonner";
+import { updateTodo } from "@/actions/toggle-done";
+import Filter, { FilterType } from "@/components/filter-task";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { deletedCompletedTask } from "@/actions/clear-completedtasks";
 
 const Home = () => {
   const [tasksList, setTasksList] = useState<Tasks[]>([]);
   const [task, setTask] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
+  const [currentFilter, setCurrentFilter] = useState<FilterType>("all");
+  const [filteredTasks, setFilteredTasks] = useState<Tasks[]>([]);
 
   const handleGetTasks = async () => {
     try {
@@ -49,8 +49,11 @@ const Home = () => {
   };
 
   const handleAddTask = async () => {
+    setLoading(true);
     try {
       if (!task || task.length === 0) {
+        toast.error("Digite uma tarefa válida.");
+        setLoading(false);
         return;
       }
       const myNewTask = await NewTask(task);
@@ -60,14 +63,91 @@ const Home = () => {
       }
 
       await handleGetTasks();
+      toast.success("Tarefa adicionada com sucesso!");
+      setTask("");
+    } catch (error) {
+      throw error;
+    }
+    setLoading(false);
+  };
+
+  const handleDeleteTask = async (id: string) => {
+    try {
+      if (!id || id.length === 0) {
+        return;
+      }
+      const deleted = await deleteTask(id);
+
+      if (!deleted) {
+        return;
+      }
+
+      await handleGetTasks();
+      toast.success("Tarefa deletada com sucesso!");
     } catch (error) {
       throw error;
     }
   };
 
+  const handleToggleTaskDone = async (id: string) => {
+    console.log(tasksList);
+
+    const previusTask = [...tasksList];
+
+    try {
+      setTasksList((prev) => {
+        const updateTaskList = prev.map((task) => {
+          if (task.id === id) {
+            return {
+              ...task,
+              done: !task.done,
+            };
+          } else {
+            return task;
+          }
+        });
+        return updateTaskList;
+      });
+      await updateTodo(id);
+    } catch (error) {
+      setTasksList(previusTask);
+      throw error;
+    }
+  };
+
+  const clearCompletedTask = async () => {
+    const deletedTasks = await deletedCompletedTask();
+
+    if (!deletedTasks) {
+      return;
+    }
+
+    setTasksList(deletedTasks || []);
+  };
+
   useEffect(() => {
     handleGetTasks();
   }, []);
+
+  useEffect(() => {
+    switch (currentFilter) {
+      case "all":
+        setFilteredTasks(tasksList);
+        break;
+      case "pending":
+        const pendingTasks = tasksList.filter((task) => !task.done);
+        setFilteredTasks(pendingTasks);
+        break;
+      case "completed":
+        const completedTasks = tasksList.filter((task) => task.done);
+        setFilteredTasks(completedTasks);
+        break;
+    }
+  }, [currentFilter, tasksList]);
+
+  const doneCount = tasksList.filter((task) => task.done).length;
+  const total = tasksList.length;
+  const progress = total === 0 ? 0 : (doneCount / total) * 100;
 
   return (
     <main className="w-full h-screen flex justify-center items-center bg-gray-100 p-10">
@@ -76,49 +156,57 @@ const Home = () => {
           <Input
             placeholder="Adicionar tarefa"
             onChange={(e) => setTask(e.target.value)}
+            value={task}
           />
           <Button
             variant="default"
             className="cursor-pointer"
             onClick={handleAddTask}
           >
-            <Plus />
+            {loading ? <LoaderCircle className="animate-spin" /> : <Plus />}
             Adicionar
           </Button>
         </CardHeader>
 
-        <Button onClick={handleGetTasks}>Busacar tarefas</Button>
-
         <CardContent>
           <Separator className="mb-4" />
-          <div className="flex gap-2">
-            <Badge className="cursor-pointer" variant="default">
-              <List />
-              Tarefas
-            </Badge>
-            <Badge className="cursor-pointer" variant="outline">
-              <Check />
-              check
-            </Badge>
-            <Badge className="cursor-pointer" variant="outline">
-              <MoveDownRight />
-              Tarefas
-            </Badge>
-          </div>
+
+          <Filter
+            currentFilter={currentFilter}
+            setCurrentFilter={setCurrentFilter}
+          />
 
           <div className="mt-4 border-b-1">
-            {tasksList.map((task) => (
+            {tasksList.length === 0 && (
+              <p className="text-sm border-t-1 py-4">
+                Você não possui nenhuma atividade cadastrada.
+              </p>
+            )}
+            {filteredTasks.map((task) => (
               <div
                 className=" h-14 flex justify-between items-center border-t-1"
                 key={task.id}
               >
-                <div className="w-2 h-full bg-green-300"></div>
-                <p className="flex-1 mx-2 text-sm cursor-pointer">
+                <div
+                  className={` ${
+                    task.done
+                      ? "w-2 h-full bg-green-300"
+                      : "w-2 h-full bg-red-400"
+                  }`}
+                ></div>
+                <p
+                  className="flex-1 mx-2 text-sm cursor-pointer"
+                  onClick={() => handleToggleTaskDone(task.id)}
+                >
                   {task.task}
                 </p>
                 <div className="text-center flex gap-2 mr-2">
-                  <EditTask />
-                  <Trash className="cursor-pointer" size={16} />
+                  <EditTask task={task} handleGetTasks={handleGetTasks} />
+                  <Trash
+                    className="cursor-pointer"
+                    size={16}
+                    onClick={() => handleDeleteTask(task.id)}
+                  />
                 </div>
               </div>
             ))}
@@ -127,21 +215,55 @@ const Home = () => {
           <div className="flex justify-between mt-4">
             <div className="mt-2 flex gap-2">
               <ListCheck size={18} />
-              <p className="text-xs">Tarefas concluidas(3/3)</p>
+              <p className="text-xs">
+                Tarefas concluidas(
+                {tasksList.filter((task) => task.done).length}/
+                {tasksList.length})
+              </p>
             </div>
-            <ClearTrash />
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  className="text-xs h-7 cursor-pointer"
+                  variant="outline"
+                >
+                  <Trash />
+                  Limpar tarefas Concluidas
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    Tem certeza que quer excluir {doneCount}{" "}
+                    {doneCount === 1 ? "Item" : "Itens"}?
+                  </AlertDialogTitle>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogAction onClick={clearCompletedTask}>
+                    Sim
+                  </AlertDialogAction>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
 
           <div className="h-2 w-full bg-gray-100 mt-4 rounded-md">
             <div
               className="h-full bg-blue-500 rounded-md"
-              style={{ width: "50%" }}
+              style={{
+                width: `${
+                  (tasksList.filter((task) => task.done).length /
+                    tasksList.length) *
+                  100
+                }%`,
+              }}
             ></div>
           </div>
 
           <div className="flex justify-end items-center mt-2 gap-2">
             <Sigma size={18} />
-            <p className="text-xs">3 tarefas no total</p>
+            <p className="text-xs">{tasksList.length} tarefas no total</p>
           </div>
         </CardContent>
       </Card>
