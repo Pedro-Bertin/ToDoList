@@ -9,6 +9,7 @@ import { Plus, Trash, ListCheck, Sigma, LoaderCircle } from "lucide-react";
 import { getTasksFromDB } from "@/actions/get-tasks-from-db";
 
 import EditTask from "@/components/edit-task";
+import Filter, { FilterType } from "@/components/filter-task";
 import ClearTrash from "@/components/trash-tasks";
 import { useEffect, useState } from "react";
 import { Tasks } from "@/generated/prisma";
@@ -16,17 +17,7 @@ import { NewTask } from "@/actions/add-task";
 import { deleteTask } from "@/actions/delete-task";
 import { toast } from "sonner";
 import { updateTodo } from "@/actions/toggle-done";
-import Filter, { FilterType } from "@/components/filter-task";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+
 import { deletedCompletedTask } from "@/actions/clear-completedtasks";
 
 const Home = () => {
@@ -147,7 +138,6 @@ const Home = () => {
 
   const doneCount = tasksList.filter((task) => task.done).length;
   const total = tasksList.length;
-  const progress = total === 0 ? 0 : (doneCount / total) * 100;
 
   return (
     <main className="w-full h-screen flex justify-center items-center bg-gray-100 p-10">
@@ -221,31 +211,7 @@ const Home = () => {
                 {tasksList.length})
               </p>
             </div>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  className="text-xs h-7 cursor-pointer"
-                  variant="outline"
-                >
-                  <Trash />
-                  Limpar tarefas Concluidas
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>
-                    Tem certeza que quer excluir {doneCount}{" "}
-                    {doneCount === 1 ? "Item" : "Itens"}?
-                  </AlertDialogTitle>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogAction onClick={clearCompletedTask}>
-                    Sim
-                  </AlertDialogAction>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+            <ClearTrash count={doneCount} onConfirm={clearCompletedTask} />
           </div>
 
           <div className="h-2 w-full bg-gray-100 mt-4 rounded-md">
