@@ -17,7 +17,7 @@ const Filter = ({ currentFilter, setCurrentFilter }: FilterProps) => {
         onClick={() => setCurrentFilter("all")}
       >
         <List />
-        Tarefas
+        Todas
       </Badge>
       <Badge
         className="cursor-pointer"
@@ -25,7 +25,7 @@ const Filter = ({ currentFilter, setCurrentFilter }: FilterProps) => {
         onClick={() => setCurrentFilter("pending")}
       >
         <Check />
-        check
+        Pendentes
       </Badge>
       <Badge
         className="cursor-pointer"
@@ -33,7 +33,7 @@ const Filter = ({ currentFilter, setCurrentFilter }: FilterProps) => {
         onClick={() => setCurrentFilter("completed")}
       >
         <MoveDownRight />
-        Tarefas
+        Concluídas
       </Badge>
     </div>
   );

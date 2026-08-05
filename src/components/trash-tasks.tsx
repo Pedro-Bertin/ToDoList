@@ -64,14 +64,12 @@ const ClearTrash = memo(function ClearTrash({
           </AlertDialogTitle>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogAction>
-            {!isDisabled && (
-              <AlertDialogAction onClick={handleConfirm} disabled={loading}>
-                {loading ? "Excluindo..." : "Sim"}
-              </AlertDialogAction>
-            )}
-          </AlertDialogAction>
-          <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
+          {!isDisabled && (
+            <AlertDialogAction onClick={handleConfirm} disabled={loading}>
+              {loading ? "Excluindo..." : "Sim"}
+            </AlertDialogAction>
+          )}
+          <AlertDialogCancel disabled={loading}>Cancelar</AlertDialogCancel>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

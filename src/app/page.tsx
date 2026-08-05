@@ -44,7 +44,6 @@ const Home = () => {
     try {
       if (!task || task.length === 0) {
         toast.error("Digite uma tarefa válida.");
-        setLoading(false);
         return;
       }
       const myNewTask = await NewTask(task);
@@ -57,9 +56,11 @@ const Home = () => {
       toast.success("Tarefa adicionada com sucesso!");
       setTask("");
     } catch (error) {
-      throw error;
+      console.error(error);
+      toast.error("Não foi possível adicionar a tarefa.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleDeleteTask = async (id: string) => {
@@ -207,8 +208,8 @@ const Home = () => {
               <ListCheck size={18} />
               <p className="text-xs">
                 Tarefas concluidas(
-                {tasksList.filter((task) => task.done).length}/
-                {tasksList.length})
+                {doneCount}/
+                {total})
               </p>
             </div>
             <ClearTrash count={doneCount} onConfirm={clearCompletedTask} />
@@ -218,18 +219,14 @@ const Home = () => {
             <div
               className="h-full bg-blue-500 rounded-md"
               style={{
-                width: `${
-                  (tasksList.filter((task) => task.done).length /
-                    tasksList.length) *
-                  100
-                }%`,
+                width: `${total === 0 ? 0 : (doneCount / total) * 100}%`,
               }}
             ></div>
           </div>
 
           <div className="flex justify-end items-center mt-2 gap-2">
             <Sigma size={18} />
-            <p className="text-xs">{tasksList.length} tarefas no total</p>
+            <p className="text-xs">{total} tarefas no total</p>
           </div>
         </CardContent>
       </Card>
