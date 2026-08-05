@@ -1,36 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ToDoList
 
-## Getting Started
+Aplicativo de lista de tarefas (to-do list) construído com Next.js, TypeScript e Prisma, com persistência em banco de dados PostgreSQL.
 
-First, run the development server:
+## Funcionalidades
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Criação, atualização, conclusão e exclusão de tarefas via Server Actions do Next.js.
+- Confirmação de ações destrutivas (como limpar todas as tarefas) com diálogos de alerta (Radix UI).
+- Notificações (toasts) de feedback para o usuário com Sonner.
+- Suporte a tema claro/escuro via next-themes.
+- Interface construída com componentes reutilizáveis no estilo shadcn, estilizados com Tailwind CSS.
+
+## Stack tecnológica
+
+- **Framework:** Next.js (App Router) + React
+- **Linguagem:** TypeScript
+- **Banco de dados / ORM:** PostgreSQL + Prisma
+- **UI:** Tailwind CSS, Radix UI (Dialog, Alert Dialog), lucide-react, Sonner
+
+## Estrutura do projeto
+
+- `actions/` — server actions para criação, atualização e remoção de tarefas
+- `app/` — rotas e páginas da aplicação
+- `components/` — componentes de UI reutilizáveis
+- `lib/` — utilitários e configuração do Prisma Client
+- `utils/` — funções auxiliares
+- `prisma/` — schema do banco de dados (model Tasks)
+
+## Como começar
+
+Clone o repositório e instale as dependências:
+
+```
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Configure a variável de ambiente `DATABASE_URL` com a string de conexão do PostgreSQL.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Execute as migrações do Prisma:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+npx prisma migrate dev
+```
 
-## Learn More
+Inicie o servidor de desenvolvimento:
 
-To learn more about Next.js, take a look at the following resources:
+```
+npm run dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Abra http://localhost:3000 no seu navegador.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Status
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Projeto finalizado e funcional.
